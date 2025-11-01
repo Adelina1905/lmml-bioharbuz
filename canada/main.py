@@ -30,9 +30,9 @@ with open('test-input.csv', 'r', newline='') as csvfile:
             continue
         for k in mySplit(row[0]):
             sentence.append(d[k]) 
-        # f_word = " ".join(word[:-1])
-        f_word = " ".join(sentence)
-        # f_word = "".join([f_word, word[-1]])
+        f_word = " ".join(sentence[:-1])
+        # f_word = " ".join(sentence)
+        f_word = "".join([f_word, sentence[-1]])
         sentences.append(f_word)
         # print(f_word)
 fileContent = "\n".join(sentences)
