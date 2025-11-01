@@ -16,8 +16,8 @@ for sentence in sentences:
         word_tokens = word_tokenize(sentence)
         filtered_words = [w for w in word_tokens if not w.lower() in stop_words]
         filtered_sentence = " ".join(filtered_words)
-        #some space replaces
-        filtered_sentence = filtered_sentence.replace(" .", ".").replace(" ,",",").replace(" '", "'")
+        #remove dots, commas, etc
+        filtered_sentence = filtered_sentence.replace(" .", "").replace(" ,","").replace(" '", "")
         filtered_sentences.append(filtered_sentence)
         
 
