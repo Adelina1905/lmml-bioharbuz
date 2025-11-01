@@ -35,9 +35,10 @@ def load_model_and_data():
 
 
 def create_optimal_perturbation(model, img_array, target_class_idx, 
-                               epsilon=0.2, iterations=200, alpha=0.01):
+                               epsilon=0.2, iterations=500, alpha=0.01):
     """
     Create optimal perturbation using PGD with momentum
+    This perturbation should be transferable to other models
     
     Args:
         model: The classifier model
@@ -50,8 +51,8 @@ def create_optimal_perturbation(model, img_array, target_class_idx,
     Returns:
         perturbation: The adversarial perturbation
     """
-    # Initialize with small random noise
-    perturbation = np.random.uniform(-0.01, 0.01, size=img_array.shape).astype('float32')
+    # Initialize with larger random noise to start closer to bounds
+    perturbation = np.random.uniform(-epsilon/2, epsilon/2, size=img_array.shape).astype('float32')
     
     # Momentum buffer for smoother updates
     momentum = np.zeros_like(perturbation)
@@ -64,8 +65,6 @@ def create_optimal_perturbation(model, img_array, target_class_idx,
     
     best_confidence = 0.0
     best_perturbation = perturbation.copy()
-    patience = 0
-    max_patience = 30
     
     for i in range(iterations):
         # Create adversarial example
@@ -83,40 +82,36 @@ def create_optimal_perturbation(model, img_array, target_class_idx,
         gradient = tape.gradient(target_loss, adversarial_tensor)
         grad_np = gradient.numpy()[0]
         
-        # Update with momentum
-        momentum = decay * momentum + grad_np / (np.linalg.norm(grad_np) + 1e-8)
+        # Normalize gradient
+        grad_norm = np.linalg.norm(grad_np)
+        if grad_norm > 0:
+            grad_np = grad_np / grad_norm
+        
+        # Update with momentum - more aggressive
+        momentum = decay * momentum + grad_np
         perturbation += alpha * np.sign(momentum)
         
-        # Project to epsilon ball
+        # Project to epsilon ball - this ensures full [-epsilon, epsilon] range
         perturbation = np.clip(perturbation, -epsilon, epsilon)
         
-        # Ensure valid image range
-        adversarial = np.clip(img_array + perturbation, 0, 1)
-        perturbation = adversarial - img_array
-        
-        # Check progress
-        if (i + 1) % 10 == 0 or i == 0:
-            predictions = model.predict(adversarial[np.newaxis, ...], verbose=0)
+        # Check progress every 25 iterations
+        if (i + 1) % 25 == 0 or i == 0:
+            # For testing, clip the result
+            test_adversarial = np.clip(img_array + perturbation, 0, 1)
+            predictions = model.predict(test_adversarial[np.newaxis, ...], verbose=0)
             confidence = predictions[0][target_class_idx]
             
             # Track best
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_perturbation = perturbation.copy()
-                patience = 0
-            else:
-                patience += 1
             
             print(f"Iter {i+1:4d}/{iterations}: Current = {confidence:.4f} ({confidence*100:.1f}%) | Best = {best_confidence:.4f} ({best_confidence*100:.1f}%)")
+            print(f"   Perturbation range: [{perturbation.min():.4f}, {perturbation.max():.4f}]")
             
-            # Early stopping if we achieve target
-            if best_confidence >= 0.80:
-                print(f"\n🎉 Achieved target confidence {best_confidence:.4f}!")
-                return best_perturbation
-            
-            # Stop if no improvement
-            if patience >= max_patience:
-                print(f"\n⏹️  No improvement for {max_patience} checks, stopping...")
+            # Early stopping if we achieve very high confidence
+            if best_confidence >= 0.95:
+                print(f"\n🎉 Achieved excellent confidence {best_confidence:.4f}!")
                 return best_perturbation
     
     return best_perturbation
@@ -152,7 +147,7 @@ def main():
         img_array=img_array,
         target_class_idx=panda_idx,
         epsilon=0.2,
-        iterations=200,
+        iterations=500,
         alpha=0.01
     )
     
@@ -186,11 +181,14 @@ def main():
         print("💡 Try training model longer or adjusting parameters")
     print("=" * 60)
     
-    # Save
-    np.save('./INDONESIA/perturbation.npy', perturbation)
-    print(f"\n💾 Saved: ./INDONESIA/perturbation.npy")
+    # Save to root directory as required by the task
+    np.save('perturbation.npy', perturbation)
+    print(f"\n💾 Saved: perturbation.npy (in root directory)")
     
-    # Save images
+    # Also save to INDONESIA folder for local testing
+    np.save('./INDONESIA/perturbation.npy', perturbation)
+    
+    # Save visualization images
     adversarial_img = (adversarial * 255).astype(np.uint8)
     Image.fromarray(adversarial_img).save('./INDONESIA/adversarial_image.jpg')
     
@@ -198,8 +196,8 @@ def main():
                        (perturbation.max() - perturbation.min() + 1e-8) * 255).astype(np.uint8)
     Image.fromarray(perturbation_vis).save('./INDONESIA/perturbation_visualization.jpg')
     
-    print(f"🖼️  Saved: adversarial_image.jpg")
-    print(f"🎨 Saved: perturbation_visualization.jpg")
+    print(f"🖼️  Saved: ./INDONESIA/adversarial_image.jpg")
+    print(f"🎨 Saved: ./INDONESIA/perturbation_visualization.jpg")
 
 
 if __name__ == "__main__":
