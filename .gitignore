@@ -9,3 +9,5 @@ dist/
 build/
 
 dataset/
+*.h5
+*.npy
