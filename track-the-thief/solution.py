@@ -8,6 +8,7 @@ import sys
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DATASET_PATH = os.path.join(SCRIPT_PATH, "dataset")
 video_path = os.path.join(DATASET_PATH, f"char_{sys.argv[1]}.mp4")
+EVERY_N_FRAME = 24
 # Video path is dataset/char_{first_arg}.mp4
 def main():
     # Open the video file
@@ -31,7 +32,7 @@ def main():
         # Process the frame here
         # e.g., display or save it
         # cv2.imshow("Frame", frame)         
-        if frame_count %24 == 0:                                                                                                     
+        if frame_count %EVERY_N_FRAME == 0:                                                                                                     
             midpoint = middle_point_from_image(frame)
             x, y = midpoint
             cv2.circle(black_img, (x, y), radius=5, color=(0, 0, 255), thickness=-1)  # (B, G, R)
@@ -42,7 +43,7 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-    cv2.imwrite(os.path.join(DATASET_PATH,"letter.jpg"), black_img)
+    cv2.imwrite(os.path.join(DATASET_PATH,f"letter{sys.argv[1]}.jpg"), black_img)
 
 
 def middle_point_from_image(img):
