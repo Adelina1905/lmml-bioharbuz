@@ -4,6 +4,9 @@ with open('CUBA/input.txt', 'r', encoding='utf-8') as f:
 # Remove periods at the end of sentences
 text = text.replace('.', '')
 
+# Remove commas with new line
+text = text.replace(', ', '\n')
+
 # Write to output.txt
 with open('CUBA/output.txt', 'w', encoding='utf-8') as f:
     f.write(text)
