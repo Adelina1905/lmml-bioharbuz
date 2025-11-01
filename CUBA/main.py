@@ -17,7 +17,7 @@ for sentence in sentences:
         filtered_words = [w for w in word_tokens if not w.lower() in stop_words]
         filtered_sentence = " ".join(filtered_words)
         #remove dots, commas, etc
-        filtered_sentence = filtered_sentence.replace(" .", "").replace(" ,","").replace(" '", "")
+        filtered_sentence = filtered_sentence.replace(" .", ".").replace(" ,",",").replace(" '", "'")
         filtered_sentences.append(filtered_sentence)
         
 
