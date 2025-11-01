@@ -1,1 +1,10 @@
-The code from main.py represents the solution to the I Hate Stop Signs task from Cuba. The program opens the input.txt and changes the '.' dot(stop) sign into nothing ''.
+# CUBA - I Hate Stop Signs
+
+A Python script that removes English stop words from text files using NLTK.
+
+## Features
+
+- Reads sentences from `input.txt` (one sentence per line)
+- Removes common English stop words (the, is, at, which, on, etc.)
+- Preserves punctuation and sentence structure
+- Outputs cleaned text to `output.txt`
