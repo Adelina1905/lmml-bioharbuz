@@ -1,0 +1,1 @@
+The code from main.py represents the solution to the I Hate Stop Signs task from Cuba. The program opens the input.txt and changes the '.' dot(stop) sign into nothing ''.
