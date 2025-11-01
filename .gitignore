@@ -7,3 +7,8 @@ __pycache__/
 node_modules/
 dist/
 build/
+
+#For INDONESIA
+dataset/
+*h5
+*npy
