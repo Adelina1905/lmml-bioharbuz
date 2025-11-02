@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from pathlib import Path
 
 IMG_PATH = r"e:\hackaton\distorted_qr.png"
 
@@ -10,6 +11,23 @@ def try_decode(img):
     data, points, straight_qrcode = detector.detectAndDecode(img)
     if data:
         return data
+    return None
+
+
+def try_decode_pyzbar(img):
+    try:
+        from pyzbar import pyzbar
+    except Exception:
+        return None
+    # pyzbar expects grayscale or BGR
+    if len(img.shape) == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img
+    bars = pyzbar.decode(gray)
+    for b in bars:
+        if b.data:
+            return b.data.decode('utf-8', errors='replace')
     return None
 
 
@@ -97,6 +115,29 @@ if __name__ == '__main__':
                 found = res
                 break
 
+    # Try pyzbar on original and variants if available
+    if not found:
+        try:
+            from pyzbar import pyzbar
+            pyz_available = True
+        except Exception:
+            pyz_available = False
+        if pyz_available:
+            res = try_decode_pyzbar(img)
+            if res:
+                print(f"DECODED (pyzbar=orig): {res}")
+                found = res
+        if not found:
+            for name, var in preprocess_variants(img):
+                try:
+                    res = try_decode_pyzbar(var)
+                except Exception:
+                    res = None
+                if res:
+                    print(f"DECODED (pyzbar_variant={name}): {res}")
+                    found = res
+                    break
+
     # As a last resort try threshold+contour extraction to isolate largest square-like region
     if not found:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -124,5 +165,14 @@ if __name__ == '__main__':
     if not found:
         print("NO_DECODE")
     else:
-        # print only the decoded string (user asked to send only flag), but here we show with prefix for clarity
-        print("FLAG:", found)
+        # Save a copy of the straight_qrcode if detector provided one for inspection
+        out_dir = Path(r"e:\hackaton")
+        try:
+            detector = cv2.QRCodeDetector()
+            _, _, sq = detector.detectAndDecode(img)
+            if isinstance(sq, np.ndarray):
+                cv2.imwrite(str(out_dir / "straight_qrcode_extracted.png"), sq)
+        except Exception:
+            pass
+        # Finally print only the decoded string as requested by the challenge
+        print(found)
