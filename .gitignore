@@ -12,3 +12,6 @@ build/
 dataset/
 *h5
 *npy
+
+data/
+results/
